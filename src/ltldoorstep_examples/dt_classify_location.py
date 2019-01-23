@@ -160,7 +160,7 @@ def best_matching_series(series, columns):
 
 # gives report based on json, metadata & registry info. 
 def dt_classify_location(data, rprt, metadata, word_matrix):
-    overall_results = {} # create empty list
+    overall_results = {} 
     for ix, row in data.iterrows(): # loops through rows in data 
         row_str = ','.join(row.astype(str)).lower() # appends info to row
 
@@ -186,16 +186,16 @@ def dt_classify_location(data, rprt, metadata, word_matrix):
 
                 else:
                     overall_results[result] = 1
-        
-        # Use the berlin library to find the LOCODES for the items in overall results
-        if 'render-codes' in metadata.configuration and metadata.configuration['render-codes']:
-            berlin = load_berlin()
-            overall_results = [(berlin.get_code(rslt), n) for rslt, n in overall_results.items()]
-            json_results = [(rslt.to_json(), n) for rslt, n in overall_results]
-            overall_results = [(rslt.describe(), n) for rslt, n in overall_results] # 
-        else:
-            overall_results = [(rslt, n) for rslt, n in overall_results.items()]
-            json_results = overall_results
+
+    # Use the berlin library to find the LOCODES for the items in overall results
+    if 'render-codes' in metadata.configuration and metadata.configuration['render-codes']:
+        berlin = load_berlin()
+        overall_results = [(berlin.get_code(rslt), n) for rslt, n in overall_results.items()]
+        json_results = [(rslt.to_json(), n) for rslt, n in overall_results]
+        overall_results = [(rslt.describe(), n) for rslt, n in overall_results] # 
+    else:
+        overall_results = [(rslt, n) for rslt, n in overall_results.items()]
+        json_results = overall_results
 
     overall_results.sort(key=lambda rslt: rslt[1], reverse=True)
     rows = len(data)
