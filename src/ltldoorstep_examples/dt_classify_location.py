@@ -17,9 +17,13 @@ from dask.threaded import get
 
 EXCLUDE_EMPTY_MATCHES = True
 PROVIDE_SUGGESTIONS = True
-GUESS_THRESHOLD = 85.0
+# unused GUESS_THRESHOLD = 85.0
+# path to the dict
 DEFAULT_REGISTER_LOCATION_WORDS = os.path.join(os.path.dirname(ltldoorstep.__file__), '../..', 'tests', 'examples', 'data', 'register-location-words.json')
-DEFAULT_REGISTER_LOCATIONS = {k: os.path.join(os.path.dirname(ltldoorstep.__file__), '../..', 'tests', 'examples', 'data', f) for k, f in {
+# creates list of default register locations using the files in the path
+# loop is a faster way of creating all the paths
+DEFAULT_REGISTER_LOCATIONS = {key: os.path.join(os.path.dirname(ltldoorstep.__file__), '../..', 'tests', 'examples', 'data', f) for key, f in {
+
     'countries': 'register-countries.json',
     'local-government-district-nir': 'register-geography-local-government-district-nir.json',
     'london-borough-eng': 'register-geography-london-borough-eng.json',
@@ -32,12 +36,16 @@ DEFAULT_REGISTER_LOCATIONS = {k: os.path.join(os.path.dirname(ltldoorstep.__file
     'unitary-authority-eng': 'register-geography-unitary-authority-eng.json'
 }.items()}
 
-
+''' Create the matrix of words the processor will look for in the data file
+'''
 def load_word_matrix(location):
     with open(location, 'r') as word_f:
         word_matrix = json.load(word_f)
     return word_matrix
 
+'''
+compares the words in the data file with the words in the matrix and returns the result if there is a match
+'''
 def find_words(text, word_matrix):
     results = set()
     for word in word_matrix.keys():
@@ -45,15 +53,19 @@ def find_words(text, word_matrix):
             results.add(word)
     return results
 
+# assesses the metadata?
 def assess_metadata(rprt, metadata, word_matrix):
     results = find_words(str(metadata.package), word_matrix)
     return rprt
 
+# creates the table headers (formatting)
 def set_properties(df, rprt):
     rprt.set_properties(headers=list(df.columns))
     return rprt
 
-
+'''
+Class to format the data for the countries in the registers 
+'''
 class RegisterCountryItem:
     matches = ()
     heading = None
@@ -63,6 +75,7 @@ class RegisterCountryItem:
         self.matches = matches
         self.suggest = suggest and PROVIDE_SUGGESTIONS
         self.preprocess = preprocess
+
 
     def load_allowed(self, countries):
         rows = [country[self.heading] for country in countries.values()]
@@ -78,10 +91,12 @@ class RegisterCountryItem:
                 self.allowed.add(row)
 
     def find_columns(self, data):
+        # Finds matches for the current object & adds the data to the columns
         columns = self.matches & {c.lower() for c in data.columns}
         return columns
 
     def analyse(self, value):
+        # returns the score for the match
         analysis = {'mismatch': value}
 
         if self.suggest:
@@ -93,9 +108,9 @@ class RegisterCountryItem:
         return ~series.isin(self.allowed)
 
 
-"""This is a dict object that contains categories commonly contained within a gov.uk register
- Data passed in will be checked against this in gov_register_checker
- This could be changed to suit different needs. """
+"""This is a dict object that contains categories commonly contained within a gov.uk register.
+Data passed in will be checked against this in gov_register_checker.
+This could be changed to suit different needs. """
 
 possible_columns = [
     RegisterCountryItem(
@@ -116,18 +131,19 @@ possible_columns = [
         'citizen-names',
         {'nationality'},
         suggest=True,
-        preprocess=lambda r: [entry.replace('citizen', '').strip() for entry in r.split(';')]
+        preprocess=lambda result: [entry.replace('citizen', '').strip() for entry in result.split(';')]
     )
 ]
 
 def find_relevant_columns(data):
-    columns = {k: [] for k in data.columns}
+    columns = {key: [] for key in data.columns}#list with each key in the columns being searched in
 
-    for col in possible_columns:
-        for k in col.find_columns(data):
-            columns[k].append(col)
+    for col in possible_columns: # loop through each column in the possible columns from the above dict
+        for key in col.find_columns(data): # for each key in the data columns, find the data in the columns
+            columns[key].append(col)# append the dict column's key to the column
 
-    return {k: v for k, v in columns.items() if v}
+    return {key: entry for key, entry in columns.items() if entry}
+# return the data entry for the key, and the entry for the item in the column if it matches the one in the dictionary
 
 def best_matching_series(series, columns):
     series = series.dropna()
@@ -137,49 +153,53 @@ def best_matching_series(series, columns):
         matches = [match for match in matches if len(match[1]) < len(series)]
 
     if matches:
-        col, series = min(matches, key=lambda m: len(m[1]))
-        return col.heading, {k: col.analyse(v) for k, v in series.iteritems()}
+        col, series = min(matches, key=lambda match_key: len(match_key[1]))
+        return col.heading, {key: col.analyse(entry) for key, entry in series.iteritems()}
 
     return None
 
+# gives report based on json, metadata & registry info. 
 def dt_classify_location(data, rprt, metadata, word_matrix):
-    overall_results = {}
-    for ix, row in data.iterrows():
-        row_str = ','.join(row.astype(str)).lower()
+    overall_results = {} # create empty list
+    for ix, row in data.iterrows(): # loops through rows in data 
+        row_str = ','.join(row.astype(str)).lower() # appends info to row
 
         # Create a list of codes
-        results = {'{}#{}'.format(*entry[0:2]) for r in find_words(row_str, word_matrix) for entry in word_matrix[r]}
+        results = {'{}#{}'.format(*entry[0:2]) for rslt in find_words(row_str, word_matrix) for entry in word_matrix[rslt]}
 
-        if results:
+        if results: 
             issue_text = "Possible locations referenced: {}".format(results)
             native_row = json.loads(row.to_json())
+            # info to be output for the report
             rprt.add_issue(
                 logging.INFO,
                 'possible-locations',
                 issue_text,
                 row_number=ix,
                 row=native_row,
-                error_data=list(results)
+                error_data= list(results)
             )
 
             for result in results:
                 if result in overall_results:
                     overall_results[result] += 1
+
                 else:
                     overall_results[result] = 1
+        
+        # Use the berlin library to find the LOCODES for the items in overall results
+        if 'render-codes' in metadata.configuration and metadata.configuration['render-codes']:
+            berlin = load_berlin()
+            overall_results = [(berlin.get_code(rslt), n) for rslt, n in overall_results.items()]
+            json_results = [(rslt.to_json(), n) for rslt, n in overall_results]
+            overall_results = [(rslt.describe(), n) for rslt, n in overall_results] # 
+        else:
+            overall_results = [(rslt, n) for rslt, n in overall_results.items()]
+            json_results = overall_results
 
-    if 'render-codes' in metadata.configuration and metadata.configuration['render-codes']:
-        berlin = load_berlin()
-        overall_results = [(berlin.get_code(r), n) for r, n in overall_results.items()]
-        json_results = [(r.to_json(), n) for r, n in overall_results]
-        overall_results = [(r.describe(), n) for r, n in overall_results]
-    else:
-        overall_results = [(r, n) for r, n in overall_results.items()]
-        json_results = overall_results
-
-    overall_results.sort(key=lambda r: r[1], reverse=True)
+    overall_results.sort(key=lambda rslt: rslt[1], reverse=True)
     rows = len(data)
-    issue_text = "Overall possible locations referenced: {}".format(', '.join(['{} ({:.2f}%)'.format(r, 100 * n / rows) for r, n in overall_results]))
+    issue_text = "Overall possible locations referenced: {}".format(', '.join(['{} ({:.2f}%)'.format(rslt, 100 * n / rows) for rslt, n in overall_results]))
 
     rprt.add_issue(
         logging.INFO,
@@ -192,7 +212,7 @@ def dt_classify_location(data, rprt, metadata, word_matrix):
     # making test_data into data loaded from json
     #register_filename = os.path.join(DEFAULT_REGISTER_LOCATION)
 
-    #with open(register_filename, 'r') as data_file:
+    #with open(register_filename, 'rslt') as data_file:
     #    countries = {row['key']: row['item'][0] for row in json.load(data_file).values()}
 
     #for col in possible_columns:
@@ -200,11 +220,11 @@ def dt_classify_location(data, rprt, metadata, word_matrix):
 
     #columns = find_relevant_columns(data)
 
-    #issues = {k: best_matching_series(data[k], v) for k, v in columns.items()}
+    #issues = {key: best_matching_series(data[key], entry) for key, entry in columns.items()}
 
-    #matrix = {k: issue for  k, issue in issues.items() if issue}
+    #matrix = {key: issue for  key, issue in issues.items() if issue}
 
-    #mismatching_columns = {k: issue[1] for k, issue in matrix.items() if issue[1]}
+    #mismatching_columns = {key: issue[1] for key, issue in matrix.items() if issue[1]}
     #for column, issues in mismatching_columns.items():
     #    for row, issue in issues.items():
     #        issue_text = _("Unexpected country-related term '%s'") % issue['mismatch']
@@ -224,7 +244,7 @@ def dt_classify_location(data, rprt, metadata, word_matrix):
     #            error_data=issue
     #        )
 
-    #checked_columns = {k: 'country-register-{col}'.format(col=issue[0]) for k, issue in matrix.items()}
+    #checked_columns = {key: 'country-register-{col}'.format(col=issue[0]) for key, issue in matrix.items()}
     #for column, checker in checked_columns.items():
     #    _("%s using checker %s")
     #    rprt.add_issue(
@@ -235,17 +255,16 @@ def dt_classify_location(data, rprt, metadata, word_matrix):
     #        error_data=checked_columns
     #    )
 
-    return rprt
+    return rprt # returns the report for each item?
 
-"""This is the workflow builder.
-
-This function will feed the json file into each method and then return the result
+"""
+This is the workflow builder. This function will feed the json file into each method and then return the result
 """
 
 class DTClassifyLocationProcessor(DoorstepProcessor):
     @staticmethod
     def make_report():
-        return report.TabularReport('datatimes/classify-location:1', _("Data Times Location Classification Processor"))
+        return report.TabularReport('datatimes/classify-location:1',("Data Times Location Classification Processor"))
 
     def get_workflow(self, filename, metadata={}):
         # setting up workflow dict
@@ -266,7 +285,7 @@ if __name__ == '__main__':
 
     metadata = {}
     if len(sys.argv) > 2:
-        with open(sys.argv[2], 'r') as metadata_f:
+        with open(sys.argv[2], 'rslt') as metadata_f:
             metadata = json.load(metadata_f)
 
     workflow = proc.build_workflow(sys.argv[1], metadata)
