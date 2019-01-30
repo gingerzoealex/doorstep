@@ -1,1 +1,3 @@
 include src/ltldoorstep/engines/pachyderm/doorstep.json
+include src/ltldoorstep/templates/head.html
+include src/ltldoorstep/templates/tail.html

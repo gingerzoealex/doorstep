@@ -36,5 +36,5 @@ def get_workflow(filename):
 
 if __name__ == "__main__":
     argv = sys.argv
-    workflow = get_workflow(argv[1])
+    workflow = build_workflow(argv[1])
     print(get(workflow, 'output'))

@@ -1,0 +1,11 @@
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/renderjson@1.4.0/renderjson.min.js"></script>
+    <script>
+      var jsonFields = document.getElementsByClassName("field-json");
+      Array.prototype.forEach.call(jsonFields, function (dest) {
+        var jsonObj = dest.dataset.json;
+        console.log(jsonObj);
+        dest.appendChild(renderjson(JSON.parse(jsonObj)));
+      });
+    </script>
+  </body>
+</html>

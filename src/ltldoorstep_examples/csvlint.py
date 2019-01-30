@@ -24,4 +24,4 @@ processor = CsvLintProcessor
 if __name__ == "__main__":
     argv = sys.argv
     processor = CsvLintProcessor()
-    workflow = processor.get_workflow(argv[1])
+    workflow = processor.build_workflow(argv[1])

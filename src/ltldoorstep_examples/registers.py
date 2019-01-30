@@ -146,7 +146,7 @@ def gov_countries_register_checker(data, rprt):
 
             column_number = data.columns.get_loc(column)
             row_number = data.index.get_loc(row)
-            native_row = json.loads(data.ix[row].to_json())
+            native_row = json.loads(data.loc[row].to_json())
             rprt.add_issue(
                 logging.WARNING,
                 'country-mismatch',
@@ -194,5 +194,5 @@ processor = RegisterCountryProcessor.make
 if __name__ == '__main__':
     gettext.install('ltldoorstep')
     proc = processor()
-    workflow = proc.get_workflow(sys.argv[1])
+    workflow = proc.build_workflow(sys.argv[1])
     print(get(workflow, 'output'))

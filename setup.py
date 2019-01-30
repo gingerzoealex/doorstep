@@ -45,7 +45,7 @@ setup(
         'sphinx-commands': ['sphinx']
     },
     install_requires=[
-        'Click',
+        'Click<7.0',
         'fiona',
         'shapely',
         'geojson_utils',
@@ -55,7 +55,7 @@ setup(
         'dask',
         'distributed',
         'tabulate',
-        'flask',
+        'flask>1.0',
         'flask_restful',
         'fuzzywuzzy',
         'unicodeblock',

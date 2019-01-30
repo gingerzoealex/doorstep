@@ -1,7 +1,10 @@
 import colorama
+import re
+import os
 import logging
-import tabulate
 import json
+import tabulate
+import gettext
 from .processor import Report
 
 
@@ -20,10 +23,10 @@ class Printer:
     def get_debug(self):
         return self._debug
 
-    def build_report():
+    def build_report(self):
         raise NotImplementedError("No report builder implemented for this printer")
 
-    def get_output():
+    def get_output(self):
         raise NotImplementedError("No outputter implemented for this printer")
 
     def print_output(self):
@@ -96,3 +99,104 @@ class JsonPrinter(Printer):
 
     def build_report(self, result_sets):
         self._output = json.dumps(result_sets)
+
+class HtmlPrinter(Printer):
+    def get_output(self):
+        templates = [
+            os.path.join(
+                os.path.dirname(__file__),
+                'templates',
+                template
+            ) for template in ('head.html', 'tail.html')
+        ]
+
+        with open(templates[0], 'r') as head_f:
+            output = head_f.read()
+
+        output += '\n' + '\n<hr/>\n'.join(self._output_sections) + '\n'
+
+        with open(templates[1], 'r') as tail_f:
+            output += tail_f.read()
+
+        return output
+
+    def build_report(self, result_sets):
+        levels = {
+            logging.INFO: [],
+            logging.WARNING: [],
+            logging.ERROR: []
+        }
+
+        general_output = []
+        results = []
+
+        report = Report.parse(result_sets)
+
+        for log_level in LEVEL_MAPPING:
+            for issue in report.get_issues(log_level):
+                item = issue.get_item()
+                levels[log_level].append([
+                    issue.processor,
+                    str(item.location),
+                    issue.code,
+                    issue.message,
+                    str(item.definition) if item.definition else '',
+                    issue.error_data
+                ])
+
+        level_labels = [
+            (logging.ERROR, 'Errors', 'error'),
+            (logging.WARNING, 'Warnings', 'warnings'),
+            (logging.INFO, 'Info', 'info')
+        ]
+
+        addslashes = re.compile(r'"')
+        for level_code, level_title, level_class in level_labels:
+            if levels[level_code]:
+                table = ['<h3>{}</h3>'.format(level_title), '<table>']
+
+                table.append('<thead><tr><th>' + '</th><th>'.join([
+                    _('Processor'),
+                    _('Location'),
+                    _('Issue'),
+                    _('Description'),
+                    _('On Item'),
+                    _('Issue Data')
+                ]) + '</tr></thead>')
+                table.append('<tbody>')
+
+                for error in levels[level_code]:
+                    row = '<tr>'
+                    for cell in error:
+                        if type(cell) is str:
+                            row += '<td>{}</td>'.format(cell)
+                        else:
+                            row += '<td class="field-json" data-json="{}"></td>'.format(addslashes.sub(r'&quot;', json.dumps(cell)))
+
+                    table.append(row)
+
+                table.append('</tbody>')
+                table.append('</table>')
+                self.add_section('\n'.join(table), level_class)
+
+    def add_section(self, output, style=None):
+        self._output_sections.append('<div class="{style}">\n{section}\n</div>'.format(style=style, section=output))
+
+_printers = {
+    'json': JsonPrinter,
+    'ansi': TermColorPrinter,
+    'html': HtmlPrinter
+}
+
+def get_printer_types():
+    global _printers
+
+    return list(_printers.keys())
+
+def get_printer(prntr, debug, target):
+    global _printers
+
+    if prntr not in _printers:
+        raise RuntimeError(_("Unknown output format"))
+
+    return _printers[prntr](debug, target=target)

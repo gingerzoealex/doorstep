@@ -19,7 +19,7 @@ import os
 from ltldoorstep.processor import DoorstepProcessor
 from ltldoorstep.reports import report
 
-DEFAULT_OUTLINE = 'example/data/osni-ni-outline-lowres.geojson'
+DEFAULT_OUTLINE = 'tests/examples/data/osni-ni-outline-lowres.geojson'
 
 
 def find_ni_data(first_file, rprt, metadata=None):
@@ -53,7 +53,7 @@ def find_ni_data(first_file, rprt, metadata=None):
         # This is what we are comparing the first csv/json file to - contains data of NI.
         ni_compare_data = gp.read_file(ni_data)
         # Multipolyon var is set to the first index of ni_compare_data with the key 'geometry'
-        multipolygon = ni_compare_data.ix[0]['geometry']
+        multipolygon = ni_compare_data.iloc[0]['geometry']
         # points var is set with data_to_compare with the key 'geometry'
         points = data_to_compare['geometry']
         # outside_points is set to data that is not in multipolygon - this is values outside NI?
@@ -108,5 +108,5 @@ processor = BoundaryCheckerImprovedProcessor
 if __name__ == "__main__":
     argv = sys.argv
     processor = BoundaryCheckerImprovedProcessor()
-    workflow = processor.get_workflow(argv[1])
+    workflow = processor.build_workflow(argv[1])
     print(compile_report(filename, metadata))

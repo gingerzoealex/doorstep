@@ -15,7 +15,7 @@ import pandas as p
 from dask.threaded import get
 import sys
 from ltldoorstep.processor import DoorstepProcessor
-from nltk.tag.stanford import CoreNLPNERTagger
+from nltk.parse import CoreNLPParser
 from nltk.tokenize.treebank import TreebankWordTokenizer
 from nltk.tokenize import word_tokenize
 from ltldoorstep.reports.report import TabularReport
@@ -95,7 +95,7 @@ def check_ips(df, rprt):
 
 def check_nltk(df, rprt):
     with run_nlp_server() as server_process:
-        ner = CoreNLPNERTagger()
+        ner = CoreNLPParser()
 
         tokenizer = TreebankWordTokenizer()
         tokens = []
@@ -179,5 +179,5 @@ processor = PiiProcessor.make
 if __name__ == "__main__":
     argv = sys.argv
     processor = PiiProcessor()
-    workflow = processor.get_workflow(argv[1])
+    workflow = processor.build_workflow(argv[1])
     print(get(workflow, 'output'))

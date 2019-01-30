@@ -158,8 +158,11 @@ class Report:
             return self.issues[level]
         return sum(list(self.issues.values()))
 
-    def append_issue(self, issue):
-        self.issues[issue.level].append(issue)
+    def append_issue(self, issue, prepend=False):
+        if prepend:
+            self.issues[issue.level].insert(0, issue)
+        else:
+            self.issues[issue.level].append(issue)
 
     @classmethod
     def load(cls, file_obj):
@@ -194,7 +197,7 @@ class Report:
             'fileType': table['format']
         }
         supplementary = dictionary['supplementary']
-        logging.warn(supplementary)
+        logging.warning(supplementary)
         row_count = table['row-count'] if 'time' in table else None
         time = table['time'] if 'time' in table else None
         encoding = table['encoding'] if 'encoding' in table else None
@@ -276,8 +279,8 @@ class Report:
         }
 
     def add_supplementary(self, typ, source, name):
-        logging.warn('Adding supplementary')
-        logging.warn((typ, source, name))
+        logging.warning('Adding supplementary')
+        logging.warning((typ, source, name))
         self.supplementary.append({
             'type': typ,
             'source': source,
@@ -290,7 +293,7 @@ class Report:
                 self.properties[arg] = properties[arg]
 
 
-    def add_issue(self, log_level, code, message, item=None, error_data=None, context=None):
+    def add_issue(self, log_level, code, message, item=None, error_data=None, context=None, at_top=False):
         """This function will add an issue to the report and takes as parameters the processor, the log level, code, message"""
 
 
@@ -302,7 +305,7 @@ class Report:
 
         issue = ReportIssue(log_level, item=item, context=context, processor=self.processor, code=code, message=message, error_data=error_data)
 
-        self.append_issue(issue)
+        self.append_issue(issue, prepend=at_top)
 
 def properties_from_report(report):
     table = report['tables'][0]

@@ -1,4 +1,4 @@
-Click
+Click<7.0
 colorama
 dask
 distributed
@@ -16,3 +16,4 @@ requests
 shapely
 fuzzywuzzy
 asynctest
+geotext

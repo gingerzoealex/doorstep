@@ -49,7 +49,8 @@ def ret(r, filename, metadata):
 
     with patch('distributed.client.open', mopen) as _:
         # Note that the event loop is handled within utils_test
-        @utils_test.gen_cluster(client=True)
+        # TODO: check_new_threads correctness needs to be explored
+        @utils_test.gen_cluster(client=True, check_new_threads=False)
         async def _exec(c, s, a, b):
             engine.client = c
             return await engine.run(filename, module, metadata)

@@ -1,0 +1,12 @@
+[submodule "tests/examples/data/locode/un-locode"]
+	path = tests/examples/data/locode/un-locode
+	url = https://github.com/flaxandteal/un-locode
+[submodule "tests/examples/data/locode/airport-codes"]
+	path = tests/examples/data/locode/airport-codes
+	url = https://github.com/datasets/airport-codes
+[submodule "tests/examples/data/locode/iso-3166-2"]
+	path = tests/examples/data/locode/iso-3166-2
+	url = https://github.com/oodavid/iso-3166-2
+[submodule "tests/examples/data/locode/country-codes"]
+	path = tests/examples/data/locode/country-codes
+	url = https://github.com/datasets/country-codes

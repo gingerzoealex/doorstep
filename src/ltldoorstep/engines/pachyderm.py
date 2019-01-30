@@ -198,7 +198,7 @@ class PachydermEngine(Engine):
                     content = file_obj.read().encode('utf-8')
 
             # TODO: safely set file extension
-            self.add_data('data.csv', content, redirect, session, bucket)
+            self.add_data('data.csv', content, False, session, bucket)
 
             monitor_pipeline, monitor_output = await self.monitor_pipeline(session)
 

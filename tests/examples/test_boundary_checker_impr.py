@@ -1,11 +1,14 @@
 import os
 from dask.threaded import get
-from ltldoorstep.reports import report
 import logging
-from ltldoorstep import processor
 import pytest
 from collections import defaultdict
 
+if __name__ == "__main__":
+    gettext.install('ltldoorstep')
+
+from ltldoorstep.reports import report
+from ltldoorstep import processor
 from ltldoorstep_examples.boundary_checker_impr import BoundaryCheckerImprovedProcessor
 
 

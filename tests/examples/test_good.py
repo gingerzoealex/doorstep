@@ -1,5 +1,9 @@
 import os
 from dask.threaded import get
+import gettext
+
+if __name__ == "__main__":
+    gettext.install('ltldoorstep')
 
 from ltldoorstep_examples.good import processor
 
@@ -11,8 +15,11 @@ def test_good_on_bad():
 
     errors = results['tables'][0]['errors']
     print(errors)
-    assert len(errors) == 3
+    assert len(errors) == 7
 
     report = errors[0]
     print(report)
     assert report['code'] == 'duplicate-header'
+
+if __name__ == "__main__":
+    test_good_on_bad()

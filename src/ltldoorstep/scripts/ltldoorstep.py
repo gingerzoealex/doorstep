@@ -29,18 +29,13 @@ def get_engine(engine, config):
 @click.group()
 @click.option('--debug/--no-debug', default=False)
 @click.option('-b', '--bucket', default=None)
-@click.option('-o', '--output', type=click.Choice(['ansi', 'json']), default='ansi')
+@click.option('-o', '--output', type=click.Choice(printer.get_printer_types()), default='ansi')
 @click.option('--output-file', default=None)
 @click.pass_context
 def cli(ctx, debug, bucket, output, output_file):
     gettext.install('ltldoorstep')
 
-    if output == 'json':
-        prnt = printer.JsonPrinter(debug, target=output_file)
-    elif output == 'ansi':
-        prnt = printer.TermColorPrinter(debug, target=output_file)
-    else:
-        raise RuntimeError(_("Unknown output format"))
+    prnt = printer.get_printer(output, debug, target=output_file)
 
     config = load_config()
 

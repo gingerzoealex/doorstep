@@ -273,7 +273,7 @@ class DockerEngine(Engine):
                         '%s:%s' % (docker_image, docker_revision),
                         environment=envs,
                         mounts=mounts,
-                        user=1000,
+                        user=os.getuid(),
                         network_mode='none',
                         cap_drop='ALL'
                     )

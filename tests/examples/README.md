@@ -49,6 +49,6 @@ This data is the Sport NI [Active Places NI - Sports Facilities Database](https:
 
 To test processors, run:
 
-  python3 -m pytest test/test_NAME.py
+  python3 -m pytest tests/examples/test_NAME.py
 
 in the /examples directory, with your virtual environment active.
