@@ -23,7 +23,9 @@ dialect = {
   "delimiter" => ","
 }
 
-if metadata.key?("configuration") && metadata["configuration"].key?("delimiter")
+if metadata.respond_to?("key") && metadata.key?("configuration") &&
+    metadata["configuration"].respond_to?("key") &&
+    metadata["configuration"].key?("delimiter")
   if metadata["configuration"]["delimiter"] == "tab"
     dialect["delimiter"] = "\t"
   end
